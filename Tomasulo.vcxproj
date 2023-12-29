@@ -136,7 +136,9 @@
   <ItemGroup>
     <ClInclude Include="BasicDefine.h" />
     <ClInclude Include="LoadBuffer.h" />
+    <ClInclude Include="Registers.h" />
     <ClInclude Include="ReorderBuffer.h" />
+    <ClInclude Include="ReservationStation.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

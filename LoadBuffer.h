@@ -1,6 +1,8 @@
 #pragma once
 #include "BasicDefine.h"
 
+class TomasuloWithROB;
+
 class LoadBufferLine {
 private:
     // 该模块中有Busy位，Load指令的地址，以及具体取得的值，以及剩余时间
@@ -12,6 +14,7 @@ private:
     int remainingTime;
     int destination; // 标注应写到ROB中的哪一个entry
     void Reset();
+    void WriteBack(TomasuloWithROB& tomasulo);
 
 public:
     LoadBufferLine();

@@ -1,6 +1,15 @@
 #include "BasicDefine.h"
 #include "LoadBuffer.h"
+#include "ReorderBuffer.h"
 
+void LoadBufferLine::Reset() {
+	busy = 0;
+	base = "";
+	offset = 0;
+	value = 0;
+	valueString = "";
+	remainingTime = -1;
+}
 
 LoadBufferLine::LoadBufferLine() {
 	Reset();
@@ -31,18 +40,23 @@ string LoadBufferLine::OffsetToString(int offset) {
 	return result;
 }
 
+void LoadBufferLine::WriteBack(TomasuloWithROB& tomasulo) {
+	tomasulo.reorderBuffer.WriteResult(destination, valueString);
+}
+
 void LoadBufferLine::Tick() {
 	// 过一个时钟
 	remainingTime--;
 	if (remainingTime == 0) {
 		valueString = "Mem[" + OffsetToString(offset) + " + Regs[" + base + "]]";
+
 	}
 }
 
 
 LoadBuffer::LoadBuffer() {
-	head = 0;
-	tail = 0;
+	head = LOADNUM - 1;
+	tail = LOADNUM - 1; //这样定义循环队列保证第一次访问到第0行
 	for (int i = 0; i < LOADNUM; i++) {
 		loadbuffers[i] = LoadBufferLine();
 	}
