@@ -31,6 +31,7 @@ int LoadBufferLine::IsBusy() {
 string LoadBufferLine::OffsetToString(int offset) {
 	// 将数字形式的offset改成string形式的
 	// 因为该部分在实际应用中并不存在，所以我们不将它加到decoder中
+	if (offset == 0)return "0";
 	string result = "";
 	while (offset) {
 		result += (offset % 10) + '0';
@@ -44,33 +45,41 @@ void LoadBufferLine::WriteBack(TomasuloWithROB& tomasulo) {
 	tomasulo.reorderBuffer.WriteResult(destination, valueString);
 }
 
-void LoadBufferLine::Tick() {
+void LoadBufferLine::Tick(TomasuloWithROB& tomasulo) {
 	// 过一个时钟
 	remainingTime--;
 	if (remainingTime == 0) {
 		valueString = "Mem[" + OffsetToString(offset) + " + Regs[" + base + "]]";
-
+		WriteBack(tomasulo);
+	}
+	if (remainingTime == -1) {
+		// 已经将值写到ROB里了，所以重置这个模块
+		Reset();
 	}
 }
 
 
 LoadBuffer::LoadBuffer() {
-	head = LOADNUM - 1;
-	tail = LOADNUM - 1; //这样定义循环队列保证第一次访问到第0行
+	tail = LOADNUM + 1; //这样定义循环队列保证第一次访问到第0行
 	for (int i = 0; i < LOADNUM; i++) {
 		loadbuffers[i] = LoadBufferLine();
 	}
 }
+
 int LoadBuffer::IsFree() {
-	if (head == ((tail + 1) % LOADNUM)) {
-		return -1; //队列已满
-	}
-	else {
+	int head = tail;
+	tail += 1;
+	tail %= LOADNUM;
+	while (tail != head) {
+		if (!loadbuffers[tail].IsBusy()) {
+			//如果有空位，就可以直接插入
+			return tail;
+		}
 		tail += 1;
 		tail %= LOADNUM;
-		return tail;
 	}
 }
+
 int LoadBuffer::LoadExecute(string instBase, int instOffset, int instDestination) {
 	int index = IsFree();
 	if (index != -1) {
@@ -79,8 +88,11 @@ int LoadBuffer::LoadExecute(string instBase, int instOffset, int instDestination
 	}
 	else return -1;
 }
-void LoadBuffer::Tick() {
+
+void LoadBuffer::Tick(TomasuloWithROB& tomasulo) {
 	for (int i = 0; i < LOADNUM; i++) {
-		loadbuffers[i].Tick();
+		if (loadbuffers[i].IsBusy()) {
+			loadbuffers[i].Tick(tomasulo);
+		}
 	}
 }

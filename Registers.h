@@ -11,6 +11,13 @@ private:
     void Reset();
 public:
     RegisterLine();
+    void SetValue(string value);
+    string GetValue();
+    int IsBusy();
+    string OffsetToString(int offset);
+    void SetBusy(int busyValue);
+    int GetROBPosition();
+    void SetROBPosition(int position);
 };
 
 class Registers {
@@ -19,4 +26,10 @@ private:
     RegisterLine registers[REGNUM];
 public:
     Registers();
+    void SetLineValue(string value, int reg);
+    string GetLineValue(int reg);
+    int IsBusy(int reg);
+    void SetBusy(int busyValue, int reg);
+    int GetROBPosition(int reg);
+    void SetROBPosition(int position, int reg);
 };

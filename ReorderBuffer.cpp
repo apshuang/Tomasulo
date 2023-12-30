@@ -8,6 +8,7 @@ void ReorderBufferLine::Reset() {
 	instructionOperand1 = "";
 	instructionOperand2 = "";
 	state = FREE;
+	moduleNum = -1;
 	value = 0;
 	valueString = "";
 }
@@ -15,10 +16,39 @@ void ReorderBufferLine::Reset() {
 ReorderBufferLine::ReorderBufferLine() {
 	Reset();
 }
+
 void ReorderBufferLine::SetID(int ID) {
 	id = ID;
 }
+
+int ReorderBufferLine::IsBusy() {
+	return busy;
+}
+
+int ReorderBufferLine::NameToNum(string RegName) {
+	// 将字符串形式的寄存器以及ROB改成int形式的，方便直接加载到对应的行
+	// 比如将R12变成12，把#2变成2
+	// 因为该部分在实际应用中并不存在，所以我们不将它加到decoder中
+	string regNumString = RegName.substr(1);
+	int regNum = stoi(regNumString);
+	return regNum;
+}
+
+string ReorderBufferLine::OffsetToString(int offset) {
+	// 将数字形式的offset改成string形式的
+	// 因为该部分在实际应用中并不存在，所以我们不将它加到decoder中
+	string result = "";
+	if (offset == 0)return "0";
+	while (offset) {
+		result += (offset % 10) + '0';
+		offset /= 10;
+	}
+	reverse(result.begin(), result.end());
+	return result;
+}
+
 void ReorderBufferLine::Tick(TomasuloWithROB& tomasulo) {
+	// 该模块的Tick只执行发射以及接收写回结果
 	int instModule;
 	InstuctionDecoder decoder = tomasulo.instructionDecoder;
 	switch (state) {
@@ -30,10 +60,84 @@ void ReorderBufferLine::Tick(TomasuloWithROB& tomasulo) {
 		instModule = decoder.GetInstructionType(instructionType);
 		int result;
 		switch (instModule) {
-		case 1:
+		case LOAD:
+			// 将指令发到LoadBuffer处执行
 			result = tomasulo.loadBuffer.LoadExecute(instructionOperand2, decoder.GetOffset(instructionOperand1), id);
+			moduleNum = result;
 			if (result != -1) {
 				state = EXEC;
+				//成功发射后，要将destination寄存器置为busy，并将其值设为依赖本ROB条目
+				tomasulo.registers.SetBusy(1, NameToNum(instuctionDestination));
+				tomasulo.registers.SetLineValue("#" + OffsetToString(id), NameToNum(instuctionDestination));
+				tomasulo.registers.SetROBPosition(id, NameToNum(instuctionDestination));
+			}
+			else {
+				// 如果返回值为-1，说明LoadBuffer内部没有空位，所以执行失败
+				// 执行失败则不做状态变化，那么下次将继续尝试
+			}
+			break;
+		case ADDER:
+			// 将指令发到ADDER模块执行
+			if (moduleNum != -1)break; // 说明已经发射了，只是操作数还未ready
+			result = tomasulo.reservationStationADD.AddExecute(instructionType, id);
+			moduleNum = result;
+			if (result != -1) {
+				// 第一个操作数
+				if (tomasulo.registers.IsBusy(NameToNum(instructionOperand1))) {
+					// 寄存器还在忙，所以应发送到Q而不是V
+					tomasulo.reservationStationADD.SetQj(NameToNum(tomasulo.registers.GetLineValue(NameToNum(instructionOperand1))), moduleNum);
+				}
+				else {
+					// 寄存器已经有现成的值了，直接发送到V
+					tomasulo.reservationStationADD.SetVj(tomasulo.registers.GetLineValue(NameToNum(instructionOperand1)), moduleNum);
+				}
+
+				//第二个操作数
+				if (tomasulo.registers.IsBusy(NameToNum(instructionOperand2))) {
+					tomasulo.reservationStationADD.SetQk(NameToNum(tomasulo.registers.GetLineValue(NameToNum(instructionOperand2))), moduleNum);
+				}
+				else {
+					tomasulo.reservationStationADD.SetVk(tomasulo.registers.GetLineValue(NameToNum(instructionOperand2)), moduleNum);
+				}
+
+				//成功发射后，要将destination寄存器置为busy，并将其值设为依赖本ROB条目
+				tomasulo.registers.SetBusy(1, NameToNum(instuctionDestination));
+				tomasulo.registers.SetLineValue("#" + OffsetToString(id), NameToNum(instuctionDestination));
+				tomasulo.registers.SetROBPosition(id, NameToNum(instuctionDestination));
+			}
+			else {
+				// 如果返回值为-1，说明LoadBuffer内部没有空位，所以执行失败
+				// 执行失败则不做状态变化，那么下次将继续尝试
+			}
+			break;
+		case MULTIPLIER:
+			// 将指令发到ADDER模块执行
+			if (moduleNum != -1)break; // 说明已经发射了，只是操作数还未ready
+			result = tomasulo.reservationStationMULT.MultExecute(instructionType, id);
+			moduleNum = result;
+			if (result != -1) {
+				// 第一个操作数
+				if (tomasulo.registers.IsBusy(NameToNum(instructionOperand1))) {
+					// 寄存器还在忙，所以应发送到Q而不是V
+					tomasulo.reservationStationMULT.SetQj(NameToNum(tomasulo.registers.GetLineValue(NameToNum(instructionOperand1))), moduleNum);
+				}
+				else {
+					// 寄存器已经有现成的值了，直接发送到V
+					tomasulo.reservationStationMULT.SetVj(tomasulo.registers.GetLineValue(NameToNum(instructionOperand1)), moduleNum);
+				}
+
+				//第二个操作数
+				if (tomasulo.registers.IsBusy(NameToNum(instructionOperand2))) {
+					tomasulo.reservationStationMULT.SetQk(NameToNum(tomasulo.registers.GetLineValue(NameToNum(instructionOperand2))), moduleNum);
+				}
+				else {
+					tomasulo.reservationStationMULT.SetVk(tomasulo.registers.GetLineValue(NameToNum(instructionOperand2)), moduleNum);
+				}
+
+				//成功发射后，要将destination寄存器置为busy，并将其值设为依赖本ROB条目
+				tomasulo.registers.SetBusy(1, NameToNum(instuctionDestination));
+				tomasulo.registers.SetLineValue("#" + OffsetToString(id), NameToNum(instuctionDestination));
+				tomasulo.registers.SetROBPosition(id, NameToNum(instuctionDestination));
 			}
 			else {
 				// 如果返回值为-1，说明LoadBuffer内部没有空位，所以执行失败
@@ -44,6 +148,17 @@ void ReorderBufferLine::Tick(TomasuloWithROB& tomasulo) {
 			break;
 
 		}
+		break;
+	case EXEC:
+		// 如果已经收到了结果value，那就转为WRITE模式
+		if (valueString != "") {
+			state = WRITE;
+			// 将值转发到寄存器，但在该行转为commit后，再将寄存器busy位置0
+			tomasulo.registers.SetLineValue(valueString, NameToNum(instuctionDestination));
+		}
+		// 在转为WRITE之后，依赖这个ROB条目的模块就可以直接取数了
+		// 换言之，value写到ROB之后就会直接转发到其他模块了（因为ROB最先执行时钟）
+
 	default:
 		break;
 	}
@@ -80,6 +195,7 @@ void ReorderBufferLine::FetchAndIssue(TomasuloWithROB& tomasulo) {
 		break;
 	}
 	state = ISSUE;
+	busy = 1;
 }
 
 void ReorderBufferLine::WriteResult(string value) {
@@ -87,6 +203,25 @@ void ReorderBufferLine::WriteResult(string value) {
 	state = WRITE;
 }
 
+string ReorderBufferLine::GetValue() {
+	return valueString;
+}
+
+void ReorderBufferLine::Commit(TomasuloWithROB& tomasulo) {
+	// 改为提交，修改状态，更改寄存器busy位
+	state = COMMIT;
+
+	// 需要验证，确保是当前条目掌控这个寄存器，才能够修改寄存器的状态
+	int t = tomasulo.registers.GetROBPosition(NameToNum(instuctionDestination));
+	if (tomasulo.registers.GetROBPosition(NameToNum(instuctionDestination)) == id) {
+		tomasulo.registers.SetBusy(0, NameToNum(instuctionDestination));
+		tomasulo.registers.SetLineValue(valueString, NameToNum(instuctionDestination));
+	}
+}
+
+int ReorderBufferLine::GetState() {
+	return state;
+}
 
 
 ReorderBuffer::ReorderBuffer() {
@@ -128,9 +263,20 @@ void ReorderBuffer::WriteResult(int entryLine, string value) {
 }
 
 void ReorderBuffer::Tick(TomasuloWithROB& tomasulo) {
+	// 先将最前面的ROB提交了（如果它已经是WRITE状态）
+	if (entry[head].GetState() == WRITE) {
+		entry[head].Commit(tomasulo);
+		head += 1;
+		head %= ENTRYNUM;
+	}
+
+
 	int index = head;
-	while (index != tail) {
-		entry[index].Tick(tomasulo);
+	while (!IsEmpty() && index != ((tail + 1) % ENTRYNUM)) {
+		// 首先要求不为空
+		if (entry[index].IsBusy()) {
+			entry[index].Tick(tomasulo);
+		}
 		index++;
 		index %= ENTRYNUM;
 	}
@@ -146,6 +292,12 @@ void ReorderBuffer::BackTrack() {
 	tail += ENTRYNUM - 1;
 	tail %= ENTRYNUM;
 }
+
+string ReorderBuffer::GetValue(int entryLine) {
+	return entry[entryLine].GetValue();
+}
+
+
 
 
 InstuctionDecoder::InstuctionDecoder() {
@@ -187,6 +339,8 @@ TomasuloWithROB::TomasuloWithROB() {
 }
 
 void TomasuloWithROB::Tick() {
-	loadBuffer.Tick();
 	reorderBuffer.Tick(*this);
+	loadBuffer.Tick(*this);
+	reservationStationADD.Tick(*this);
+	reservationStationMULT.Tick(*this);
 }

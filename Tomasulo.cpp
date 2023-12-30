@@ -6,7 +6,7 @@ int main() {
     FILE* stream2;
     freopen_s(&stream2, "output.txt", "w", stdout);
     TomasuloWithROB tomasulo;
-    for (int i = 0; i < 10; i++) {
+    for (int i = 1; i <= 40; i++) {
         tomasulo.Tick();
     }
     fclose(stdin);

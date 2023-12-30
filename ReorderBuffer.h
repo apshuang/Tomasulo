@@ -25,15 +25,22 @@ private:
     string instructionOperand1;
     string instructionOperand2;
     int state;
+    int moduleNum; // 记录该ROB将指令发到了模块的哪一行
     float value;
     string valueString; // 由于该作业的特殊性，设置该变量用于表示#2-#1这类值
     void Reset();
 public:
     ReorderBufferLine();
     void SetID(int ID);
+    int IsBusy();
+    int NameToNum(string RegName);
     void Tick(TomasuloWithROB& tomasulo);
     void FetchAndIssue(TomasuloWithROB& tomasulo);
     void WriteResult(string value);
+    string GetValue();
+    void Commit(TomasuloWithROB& tomasulo);
+    int GetState();
+    string OffsetToString(int offset);
 };
 
 
@@ -54,6 +61,7 @@ public:
     void WriteResult(int entryLine, string value);
     void Tick(TomasuloWithROB& tomasulo);
     void BackTrack();
+    string GetValue(int entryLine);
 };
 
 

@@ -20,19 +20,31 @@ using namespace std;
 #define DIVCYCLE 20
 
 enum ALLSTATE {
-    FREE = 0,
-    ISSUE = 1,
-    EXEC = 2,
-    WRITE = 3,
-    COMMIT = 4
+	FREE = 0,
+	ISSUE = 1,
+	EXEC = 2,
+	WRITE = 3,
+	COMMIT = 4
 };
 
 enum INSTRUCTIONTYPE {
-    LOAD = 1,
-    STORE = 2,
-    ADDER = 3,
-    MULTIPLIER = 4
+	LOAD = 1,
+	STORE = 2,
+	ADDER = 3,
+	MULTIPLIER = 4
 };
 
 const vector<string> StateOutput = { "Free", "Issue", "Exec", "Write", "Commit" };
 const vector<string> OperandNum3Instuction = { "LD", "SD","ADDD","SUBD","MULTD","DIVD" };
+const unordered_map<string, int> ExecTime = {
+		{"ADDD", ADDCYCLE},
+		{"SUBD", SUBCYCLE},
+		{"MULTD", MULTCYCLE},
+		{"DIVD", DIVCYCLE}
+};
+const unordered_map<string, string> OperatorSign = {
+	{"ADDD", "+"},
+	{"SUBD", "-"},
+	{"MULTD", "*"},
+	{"DIVD", "/"}
+};

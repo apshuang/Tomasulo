@@ -22,13 +22,12 @@ public:
     void SetLoadBuffer(string instBase, int instOffset, int instDestination);
     int IsBusy();
     string OffsetToString(int offset);
-    void Tick();
+    void Tick(TomasuloWithROB& tomasulo);
 };
 
 class LoadBuffer {
 private:
-    // 该模块使用循环队列实现，若head==tail说明队列为空，若head==tail+1(mod LOADNUM)说明队列已满
-    int head;
+    // 该模块使用伪循环队列实现，但是不关心head，只关心tail（因为要尽量负载均衡）
     int tail;
     LoadBufferLine loadbuffers[LOADNUM];
 
@@ -36,5 +35,5 @@ public:
     LoadBuffer();
     int IsFree();
     int LoadExecute(string instBase, int instOffset, int instDestination);
-    void Tick();
+    void Tick(TomasuloWithROB& tomasulo);
 };
