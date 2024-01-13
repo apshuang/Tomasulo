@@ -32,4 +32,5 @@ public:
     void SetBusy(int busyValue, int reg);
     int GetROBPosition(int reg);
     void SetROBPosition(int position, int reg);
+    void InsertOutput(vector<string>& table);
 };

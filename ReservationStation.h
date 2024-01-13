@@ -29,6 +29,7 @@ public:
     void SetQj(int instQj);
     void SetQk(int instQk);
     void Tick(TomasuloWithROB& tomasulo);
+    void InsertOutput(vector<string>& table, int id, int moduleDistinguish);
 };
 
 class ReservationStationADD {
@@ -45,6 +46,7 @@ public:
     void SetQj(int instQj, int moduleNum);
     void SetQk(int instQk, int moduleNum);
     void Tick(TomasuloWithROB& tomasulo);
+    void InsertOutput(vector<string>& table);
 };
 
 class ReservationStationMULT {
@@ -61,4 +63,5 @@ public:
     void SetQj(int instQj, int moduleNum);
     void SetQk(int instQk, int moduleNum);
     void Tick(TomasuloWithROB& tomasulo);
+    void InsertOutput(vector<string>& table);
 };

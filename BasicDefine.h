@@ -8,6 +8,7 @@
 using namespace std;
 
 #define LOADNUM 2
+#define STORENUM 2
 #define ADDNUM 3
 #define MULTNUM 2
 #define ENTRYNUM 6

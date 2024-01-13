@@ -55,6 +55,9 @@ void ReorderBufferLine::Tick(TomasuloWithROB& tomasulo) {
 	case FREE:
 		FetchAndIssue(tomasulo);
 		break;
+	case COMMIT:
+		FetchAndIssue(tomasulo);
+		break;
 	case ISSUE:
 		// 在取得对应的指令之后，根据指令类型发射去对应的模块处
 		instModule = decoder.GetInstructionType(instructionType);
@@ -144,6 +147,11 @@ void ReorderBufferLine::Tick(TomasuloWithROB& tomasulo) {
 				// 执行失败则不做状态变化，那么下次将继续尝试
 			}
 			break;
+		case STORE:
+			if (moduleNum != -1)break; // 说明已经发射了，只是操作数还未ready
+			result = tomasulo.storeBuffer.LoadExecute(instructionOperand2, decoder.GetOffset(instructionOperand1), tomasulo.registers.GetLineValue(NameToNum(instuctionDestination)), id);
+			moduleNum = result;
+			break;
 		default:
 			break;
 
@@ -176,6 +184,8 @@ void ReorderBufferLine::FetchAndIssue(TomasuloWithROB& tomasulo) {
 		return;
 	}
 	tomasulo.reorderBuffer.SetEmpty(0); // 若读到指令，则ROB内肯定不为空
+	Reset();
+	busy = 1;
 	instructionType = s;
 	int operandNum = decoder.GetOperandNum(instructionType);
 	switch (operandNum) {
@@ -210,7 +220,7 @@ string ReorderBufferLine::GetValue() {
 void ReorderBufferLine::Commit(TomasuloWithROB& tomasulo) {
 	// 改为提交，修改状态，更改寄存器busy位
 	state = COMMIT;
-
+	busy = 0;
 	// 需要验证，确保是当前条目掌控这个寄存器，才能够修改寄存器的状态
 	int t = tomasulo.registers.GetROBPosition(NameToNum(instuctionDestination));
 	if (tomasulo.registers.GetROBPosition(NameToNum(instuctionDestination)) == id) {
@@ -221,6 +231,23 @@ void ReorderBufferLine::Commit(TomasuloWithROB& tomasulo) {
 
 int ReorderBufferLine::GetState() {
 	return state;
+}
+
+void ReorderBufferLine::InsertOutput(vector<string>& table) {
+	string line;
+	line += (string)"entry" + ((char)(id + 1 + '0')) + (string)" : " + (busy ? (string)"Yes" : (string)"No");
+	if (instructionType == "") {
+		line += (string)",,,,,;";
+		table.push_back(line);
+		return;
+	}
+	line += (string)"," + instructionType + ' ' + instuctionDestination + ' ' + instructionOperand1 + ' ' + instructionOperand2 + (string)",";
+	line += StateOutput[state] + (string)"," + instuctionDestination + (string)"," + valueString + ';';
+	table.push_back(line);
+}
+
+void ReorderBufferLine::SetExecState() {
+	state = EXEC;
 }
 
 
@@ -283,7 +310,6 @@ void ReorderBuffer::Tick(TomasuloWithROB& tomasulo) {
 	int index_free = IsFree();
 	if (index_free != -1) {
 		entry[index_free].Tick(tomasulo); // 尝试读入新的指令
-
 	}
 }
 
@@ -297,6 +323,26 @@ string ReorderBuffer::GetValue(int entryLine) {
 	return entry[entryLine].GetValue();
 }
 
+void ReorderBuffer::InsertOutput(vector<string>& table) {
+	for (int i = 0; i < ENTRYNUM; i++) {
+		entry[i].InsertOutput(table);
+	}
+}
+
+int ReorderBuffer::CheckStop() {
+	int stop = 1;
+	for (int i = 0; i < ENTRYNUM; i++) {
+		if (entry[i].IsBusy() || entry[i].GetState() != COMMIT) {
+			stop = 0;
+			break;
+		}
+	}
+	return stop;
+}
+
+void ReorderBuffer::SetExecState(int entryLine) {
+	entry[entryLine].SetExecState();
+}
 
 
 
@@ -331,16 +377,71 @@ int InstuctionDecoder::GetOffset(string instructionOperand) {
 TomasuloWithROB::TomasuloWithROB() {
 	reorderBuffer = ReorderBuffer();
 	loadBuffer = LoadBuffer();
+	storeBuffer = StoreBuffer();
 	reservationStationADD = ReservationStationADD();
 	reservationStationMULT = ReservationStationMULT();
 	registers = Registers();
 	instructionDecoder = InstuctionDecoder();
+	outputTable.clear();
 	cycle = 0;
 }
 
-void TomasuloWithROB::Tick() {
+int TomasuloWithROB::Tick() {
+	if (reorderBuffer.CheckStop())return 1;
 	reorderBuffer.Tick(*this);
 	loadBuffer.Tick(*this);
 	reservationStationADD.Tick(*this);
 	reservationStationMULT.Tick(*this);
+	storeBuffer.Tick(*this);
+	GetOutput();
+	return 0;
 }
+
+void TomasuloWithROB::GetOutput() {
+	vector<string> table;
+	reorderBuffer.InsertOutput(table);
+	loadBuffer.InsertOutput(table);
+	reservationStationADD.InsertOutput(table);
+	reservationStationMULT.InsertOutput(table);
+	registers.InsertOutput(table);
+	outputTable.push_back(table);
+}
+
+void TomasuloWithROB::OutputAll() {
+	int sameStart = 0; //如果是相同的，就置为非0
+	int allSize = outputTable.size();
+	for (int i = 0; i < allSize -1; i++) {
+		int nowCheck = 1; //1代表是相同的，如果有不同的话再置为零即可
+		for (int j = 0; j < outputTable[i].size(); j++) {
+			if (outputTable[i][j] != outputTable[i + 1][j]) {
+				nowCheck = 0;
+				break;
+			}
+		}
+		if (nowCheck == 1) {
+			//如果是相同的，就置为起始的cycle
+			if (sameStart == 0)sameStart = i + 1;
+		}
+		else {
+			cout << "cycle_";
+			if (sameStart) {
+				cout << sameStart << "-";
+			}
+			cout << i + 1 << ":" << endl;
+			for (int j = 0; j < outputTable[i].size(); j++) {
+				cout << outputTable[i][j] << endl;
+			}
+			cout << endl << endl;
+			sameStart = 0;
+		}
+	}
+	cout << "cycle_";
+	if (sameStart) {
+		cout << sameStart << "-";
+	}
+	cout << allSize << ":" << endl;
+	for (int j = 0; j < outputTable[allSize - 1].size(); j++) {
+		cout << outputTable[allSize - 1][j] << endl;
+	}
+}
+

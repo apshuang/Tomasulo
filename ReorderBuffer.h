@@ -41,6 +41,8 @@ public:
     void Commit(TomasuloWithROB& tomasulo);
     int GetState();
     string OffsetToString(int offset);
+    void InsertOutput(vector<string>& table);
+    void SetExecState();
 };
 
 
@@ -62,6 +64,9 @@ public:
     void Tick(TomasuloWithROB& tomasulo);
     void BackTrack();
     string GetValue(int entryLine);
+    void InsertOutput(vector<string>& table);
+    int CheckStop();
+    void SetExecState(int entryLine);
 };
 
 
@@ -70,11 +75,15 @@ public:
     // 此处整合了前面所有模块，组成一个系统，并包括对应的cycle
     ReorderBuffer reorderBuffer;
     LoadBuffer loadBuffer;
+    StoreBuffer storeBuffer;
     ReservationStationADD reservationStationADD;
     ReservationStationMULT reservationStationMULT;
     Registers registers;
     InstuctionDecoder instructionDecoder;
+    vector<vector<string>> outputTable;
     int cycle;
     TomasuloWithROB();
-    void Tick();
+    int Tick();
+    void GetOutput();
+    void OutputAll();
 };

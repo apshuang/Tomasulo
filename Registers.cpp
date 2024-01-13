@@ -4,7 +4,7 @@
 
 void RegisterLine::Reset() {
     busy = 0;
-    ROBPosition = 0;
+	ROBPosition = -1;
     value = 0;
     valueString = "";
 }
@@ -84,4 +84,29 @@ int Registers::GetROBPosition(int reg) {
 
 void Registers::SetROBPosition(int position,int reg) {
 	registers[reg / 2].SetROBPosition(position);
+}
+
+void Registers::InsertOutput(vector<string>& table) {
+	string line1;
+	line1 += (string)"Reorder:";
+	for (int i = 0; i < REGNUM; i++) {
+		line1 += 'F';
+		line1 += registers[i].OffsetToString(i);
+		line1 += (string)":";
+		if (registers[i].IsBusy())line1 += (char)(registers[i].GetROBPosition() + 1 + '0');
+		line1 += ';';
+	}
+	table.push_back(line1);
+
+	string line2;
+	line2 += (string)"Busy:";
+	for (int i = 0; i < REGNUM; i++) {
+		line2 += 'F';
+		line2 += registers[i].OffsetToString(i);
+		line2 += (string)":";
+		if (registers[i].IsBusy())line2 += (string)"Yes";
+		else line2 += (string)"No";
+		line2 += ';';
+	}
+	table.push_back(line2);
 }
