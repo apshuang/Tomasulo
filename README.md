@@ -1,0 +1,2 @@
+主函数是tomasulo.cpp
+直接放到VS上就能跑，若IDE不是VS，需要在tomasulo.cpp中修改一下文件输入输出相关的代码
