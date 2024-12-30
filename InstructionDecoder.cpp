@@ -6,11 +6,15 @@ InstructionDecoder::InstructionDecoder(IntegerRegisters* intRegs, FloatRegisters
 	instructions.clear();
 	index = 0;
 	labelMap.clear();
+	compareType = "";
+	compareLeft = "";
+	compareRight = "";
+	branchLabel = "";
 
 	integerRegisters = intRegs;
 	floatRegisters = floatRegs;
 	loadBuffer = LDBuffer;
-	storeBuffer = storeBuffer;
+	storeBuffer = SDBuffer;
 	reservationAdd = RSAdd;
 	reservationMult = RSMult;
 
@@ -21,15 +25,19 @@ InstructionDecoder::InstructionDecoder(IntegerRegisters* intRegs, FloatRegisters
 
 	instructionModule["LD"] = LOAD; //Load指令类型为1
 	instructionModule["fld"] = LOAD;
+	instructionModule["ld"] = LOAD;
 	instructionModule["SD"] = STORE; //Store指令类型为2
+	instructionModule["sd"] = STORE;
 	instructionModule["ADDD"] = ADDER; // 调用ADD模块的指令类型为3
 	instructionModule["fadd.d"] = ADDER;
+	instructionModule["addi"] = ADDER;
 	instructionModule["SUBD"] = ADDER; 
 	instructionModule["fsub.d"] = ADDER; 
 	instructionModule["MULTD"] = MULTIPLIER; // 调用MULT模块的指令类型为4
 	instructionModule["fmul.d"] = MULTIPLIER;
 	instructionModule["DIVD"] = MULTIPLIER;
 	instructionModule["fdiv.d"] = MULTIPLIER;
+	instructionModule["bne"] = BRANCH;
 
 	while (1) {
 		string s = "";
@@ -54,12 +62,13 @@ string InstructionDecoder::GetRegisterValue(string originValue) {
 	// 如果某字面值是寄存器，那必须是符合"F1、x2、R3"这种格式
 	char label = originValue[0];
 	label = tolower(label);
-	int index = stoi(originValue.substr(1));
 	if (label == 'f' || label == 'r') {
 		// 浮点寄存器
+		int index = stoi(originValue.substr(1));
 		return floatRegisters->GetLineValue(index);
 	}
 	else if (label == 'x') {
+		int index = stoi(originValue.substr(1));
 		return integerRegisters->GetLineValue(index);
 	}
 	else return originValue;  // 常量直接返回
@@ -151,6 +160,45 @@ bool InstructionDecoder::ParseAddAndMult(string opcode, string operands, float c
 	return true;
 }
 
+void InstructionDecoder::ParseBranch(string opcode, string operands) {
+	compareType = opcode;
+	size_t commaPos = operands.find(",");
+	if (commaPos != std::string::npos) {
+		compareLeft = operands.substr(0, commaPos);
+		compareLeft = GetRegisterValue(compareLeft);
+		operands = operands.substr(commaPos + 1);
+	}
+
+	commaPos = operands.find(",");
+	if (commaPos != std::string::npos) {
+		compareRight = operands.substr(0, commaPos);
+		compareRight = GetRegisterValue(compareRight);
+		branchLabel = operands.substr(commaPos + 1);
+	}
+}
+
+int InstructionDecoder::isBranch() {
+	if(!checkReady({compareLeft, compareRight})) return -1;
+	if (compareType == "bne") {
+		if (compareLeft != compareRight) {
+			return 1;
+		}
+		else return 0;
+	}
+	else {
+		cout << "Unknown branch type" << endl;
+		abort();
+	}
+}
+
+void InstructionDecoder::ResetBranch() {
+	compareType = "";
+	compareLeft = "";
+	compareRight = "";
+	branchLabel = "";
+
+}
+
 void InstructionDecoder::Tick(int cycle) {
 	/*
 	请注意！该decoder只能处理符合格式的inst，格式如下：
@@ -158,7 +206,10 @@ void InstructionDecoder::Tick(int cycle) {
 	其中括号内的label和comments都是可选项
 	而operands是因指令而异的，比如add指令是"dest,src1,src2"，而ld指令是"dest,offset(base)"，这个parse交给下游去进行
 	*/
-
+	if (branchLabel != "") {
+		// 说明当前已经卡在一条branch指令上了，需要等待判断结果出来之后，再发射后续的指令
+		return;
+	}
 	for (int i = 0; i < ISSUENUM; i++) {
 		float exactCycle = cycle + (float)i / ISSUENUM;
 		if (index >= instructions.size()) return;  // 已读完所有指令
@@ -206,6 +257,20 @@ void InstructionDecoder::Tick(int cycle) {
 					break;
 				}
 			}
+			else if (instructionModule[opcode] == BRANCH) {
+				// BRANC的Hoperands的格式为"compareLeft,compareRight,label"
+				ParseBranch(opcode, operands);
+				int branchResult = isBranch();
+				if (branchResult == -1)return;  // 尚未准备好，阻塞
+				else if (branchResult == 0) {
+					ResetBranch();
+					index++;
+				}
+				else if (branchResult == 1) {
+					ResetBranch();
+					index = labelMap[branchLabel];
+				}
+			}
 		}
 		else {
 			cout << "You have not registered " << opcode << " instruction yet!!" << endl;
@@ -216,4 +281,23 @@ void InstructionDecoder::Tick(int cycle) {
 
 bool InstructionDecoder::isAllFree() {
 	return index >= instructions.size();
+}
+
+void InstructionDecoder::ReceiveData(string unitName, string value) {
+	if (branchLabel != "") {
+		// 必须当前是在阻塞状态的
+		if (compareLeft == unitName) compareLeft = value;
+		if (compareRight == unitName) compareRight = value;
+
+		int branchResult = isBranch();
+		if (branchResult == -1)return;  // 尚未准备好，阻塞
+		else if (branchResult == 0) {
+			ResetBranch();
+			index++;
+		}
+		else if (branchResult == 1) {
+			ResetBranch();
+			index = labelMap[branchLabel];
+		}
+	}
 }

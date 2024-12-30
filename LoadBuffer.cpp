@@ -152,23 +152,23 @@ bool LoadBuffer::isAllFree() {
 }
 
 void LoadBuffer::InsertOutput(vector<string>& table) {
-	printHeader("Load Buffers", 54);
+	printHeader("Load Buffers", 70);
 
 	std::cout << "|" << centerString("Line", 12)
 		<< "|" << centerString("Busy", 6)
-		<< "|" << centerString("Address", 20) 
+		<< "|" << centerString("Address", 36) 
 		<< "|" << centerString("Remaining", 11) << "|\n";
-	std::cout << std::string(55, '-') << "\n";
+	std::cout << std::string(70, '-') << "\n";
 
 	// 打印每一行的内容
 	for (int i = 0; i < LOADNUM; ++i) {
 		std::cout << "|" << centerString(loadbuffers[i]->GetName(), 12)
 			<< "|" << centerString(std::to_string(loadbuffers[i]->IsBusy()), 6)
-			<< "|" << centerString(loadbuffers[i]->GetAddress(), 20) 
+			<< "|" << centerString(loadbuffers[i]->GetAddress(), 36) 
 			<< "|" << centerString(std::to_string(loadbuffers[i]->GetRemainingTime()), 11) << "|\n";
 	}
 
-	std::cout << std::string(55, '-') << "\n";  // 打印表格下边的分隔线
+	std::cout << std::string(70, '-') << "\n";  // 打印表格下边的分隔线
 	cout << endl;
 }
 
@@ -323,22 +323,22 @@ void StoreBuffer::ReceiveData(string unitName, string value) {
 }
 
 void StoreBuffer::InsertOutput(vector<string>& table) {
-	printHeader("Store Buffers", 53);
+	printHeader("Store Buffers", 70);
 
 	std::cout << "|" << centerString("Line", 10)
 		<< "|" << centerString("Busy", 6)
-		<< "|" << centerString("Address", 20)
+		<< "|" << centerString("Address", 36)
 		<< "|" << centerString("Remaining", 11) << "|\n";
-	std::cout << std::string(53, '-') << "\n";
+	std::cout << std::string(70, '-') << "\n";
 
 	// 打印每一行的内容
 	for (int i = 0; i < STORENUM; ++i) {
 		std::cout << "|" << centerString(storebuffers[i]->GetName(), 10)
 			<< "|" << centerString(std::to_string(storebuffers[i]->IsBusy()), 6)
-			<< "|" << centerString(storebuffers[i]->GetAddress(), 20)
+			<< "|" << centerString(storebuffers[i]->GetAddress(), 36)
 			<< "|" << centerString(std::to_string(storebuffers[i]->GetRemainingTime()), 11) << "|\n";
 	}
 
-	std::cout << std::string(53, '-') << "\n";  // 打印表格下边的分隔线
+	std::cout << std::string(70, '-') << "\n";  // 打印表格下边的分隔线
 	cout << endl;
 }

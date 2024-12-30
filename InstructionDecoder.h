@@ -11,6 +11,9 @@ private:
     vector<string> instructions;
     int index;  // 类似于“当前指令地址”，如果大于等于instructions.size()，那就说明已经读完了所有指令
     unordered_map<string, int> labelMap;
+    string compareType;
+    string compareLeft, compareRight;
+    string branchLabel;
 
     IntegerRegisters* integerRegisters;
     FloatRegisters* floatRegisters;
@@ -21,6 +24,9 @@ private:
     
     bool ParseLoadAndStore(string opcode, string operands, float cycle);
     bool ParseAddAndMult(string opcode, string operands, float cycle);
+    int isBranch();  // 返回-1说明未准备好（继续阻塞），返回0说明不跳转（index向下），返回1说明跳转（index回到对应label处）
+    void ParseBranch(string opcode, string operands);
+    void ResetBranch();
     string GetRegisterValue(string originValue);
     void SetRegisterValue(string registerName, string funcUnit);
 public:
@@ -28,6 +34,7 @@ public:
     int GetOperandNum(string instructionType);
     int GetInstructionType(string instructionType);
     int GetOffset(string instructionOperand);
+    void ReceiveData(string unitName, string value);  // 从CDB那里接收数据
     bool isAllFree();
     void Tick(int cycle);
 };

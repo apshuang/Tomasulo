@@ -9,7 +9,7 @@ Tomasulo::Tomasulo() {
 	integerRegisters = new IntegerRegisters();
 	floatRegisters = new FloatRegisters();
 	instructionDecoder = new InstructionDecoder(integerRegisters, floatRegisters, loadBuffer, storeBuffer, reservationStationADD, reservationStationMULT);
-	commonDataBus = new CommonDataBus(integerRegisters, floatRegisters, loadBuffer, storeBuffer, reservationStationADD, reservationStationMULT);
+	commonDataBus = new CommonDataBus(integerRegisters, floatRegisters, loadBuffer, storeBuffer, reservationStationADD, reservationStationMULT, instructionDecoder);
 	outputTable.clear();
 	cycle = 0;
 }

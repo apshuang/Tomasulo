@@ -93,6 +93,11 @@ IntegerRegisters::IntegerRegisters() {
 		initValue = "Regs[x" + OffsetToString(i) + "]";
 		registers[i]->SetValue(initValue);
 	}
+
+	// SPECIAL SETTING!!! 用于控制循环的结束
+#if ISSUENUM == 2
+	registers[3]->SetValue("Regs[x1] + 8 + 8 + 8");
+#endif
 }
 
 void IntegerRegisters::SetLineValue(string value, int reg) {

@@ -22,7 +22,7 @@ using namespace std;
 #define MULTCYCLE 6
 #define DIVCYCLE 12
 
-#define ISSUENUM 1
+#define ISSUENUM 2
 #define ADDERNUM 1  // 这个是functionUnit的数量
 #define MULTIPLIERNUM 1
 #define LOADUNITNUM 1  // 为了方便，我们假设load指令和store指令使用的内存单元各有1个
@@ -40,7 +40,8 @@ enum INSTRUCTIONTYPE {
 	LOAD = 1,
 	STORE = 2,
 	ADDER = 3,
-	MULTIPLIER = 4
+	MULTIPLIER = 4,
+	BRANCH = 5
 };
 
 const vector<string> StateOutput = { "Free", "Issue", "Exec", "Write", "Commit" };
@@ -53,7 +54,8 @@ const unordered_map<string, int> ExecTime = {
 		{"fadd.d", ADDCYCLE},
 		{"fsub.d", SUBCYCLE},
 		{"fmul.d", MULTCYCLE},
-		{"fdiv.d", DIVCYCLE}
+		{"fdiv.d", DIVCYCLE},
+		{"addi", ADDCYCLE}
 };
 const unordered_map<string, string> OperatorSign = {
 	{"ADDD", "+"},
@@ -63,7 +65,8 @@ const unordered_map<string, string> OperatorSign = {
 	{"fadd.d", "+"},
 	{"fsub.d", "-"},
 	{"fmul.d", "*"},
-	{"fdiv.d", "/"}
+	{"fdiv.d", "/"},
+	{"addi", "+"}
 };
 
 
