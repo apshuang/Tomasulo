@@ -1,8 +1,7 @@
 #pragma once
 #include "BasicDefine.h"
 
-
-class TomasuloWithROB;
+class CommonDataBus;
 
 class ReservationStationLine {
 private:
@@ -10,42 +9,40 @@ private:
     // 还有Busy位、计算结果、执行状态、目的位置（写到第几条Reorder Buffer），已经剩余执行时间
     int busy;
     string Op;
-    float Vj, Vk; // 如果是立即数就用这两个
-    string Vj2, Vk2; // 如果是Mem[32 + Regs[x2]]这类值就用这个
-    int Qj, Qk; // 这里只能是指向#2这种ROB位置，说明值尚未ready
-    float value;
-    string valueString; // 由于该作业的特殊性，设置该变量用于表示#2-#1这类值
-    int state;
-    int destination; // 当其为FREE状态时，Destination值为-1
+    string Vj, Vk; // 在本项目中所有值都用string表示，如果是没准备好的值，会写作Load2等，那么就将其视作Qj、Qk即可（在output的时候亦会有所区分）
+    string valueString;
     int remainingTime; // 当其为FREE状态时，RemainingTime值为-1
+    float arrivedTime;
+    string unitName;
     void Reset();
-    void WriteBack(TomasuloWithROB& tomasulo);
 public:
-    ReservationStationLine();
+    ReservationStationLine(string name);
     int IsBusy();
-    void SetRSLine(string instOp, int instDest);
-    void SetVj(string instVj);
-    void SetVk(string instVk);
-    void SetQj(int instQj);
-    void SetQk(int instQk);
-    void Tick(TomasuloWithROB& tomasulo);
-    void InsertOutput(vector<string>& table, int id, int moduleDistinguish);
+    string GetName();
+    string GetOp();
+    string GetVj();
+    string GetVk();
+    int GetRemainingTime();
+    void SetExecute();
+    float GetArrivedTime();
+    void SetRSLine(string instOp, string instVj, string instVk, float arrived);
+    void Tick();
+    bool isReady();
+    void ReceiveData(string unitName, string value);  // 从CDB那里接收数据
 };
 
 class ReservationStationADD {
 private:
     // 该模块使用伪循环队列实现，但是不关心head，只关心tail（因为要尽量负载均衡）
     int tail;
-    ReservationStationLine addModule[ADDNUM];
+    ReservationStationLine* addModule[ADDNUM];
 public:
     ReservationStationADD();
     int IsFree();
-    int AddExecute(string instOp, int instDest);
-    void SetVj(string instVj, int moduleNum);
-    void SetVk(string instVk, int moduleNum);
-    void SetQj(int instQj, int moduleNum);
-    void SetQk(int instQk, int moduleNum);
-    void Tick(TomasuloWithROB& tomasulo);
+    string AddIssue(string instOp, string instVj, string instVk, float arrived);
+    void Tick();
+    void ReceiveData(string unitName, string value);  // 从CDB那里接收数据
+    bool isAllFree();
     void InsertOutput(vector<string>& table);
 };
 
@@ -53,15 +50,13 @@ class ReservationStationMULT {
 private:
     // 该模块使用伪循环队列实现，但是不关心head，只关心tail（因为要尽量负载均衡）
     int tail;
-    ReservationStationLine multModule[MULTNUM];
+    ReservationStationLine* multModule[MULTNUM];
 public:
     ReservationStationMULT();
     int IsFree();
-    int MultExecute(string instOp, int instDest);
-    void SetVj(string instVj, int moduleNum);
-    void SetVk(string instVk, int moduleNum);
-    void SetQj(int instQj, int moduleNum);
-    void SetQk(int instQk, int moduleNum);
-    void Tick(TomasuloWithROB& tomasulo);
+    string MultIssue(string instOp, string instVj, string instVk, float arrived);
+    void Tick();
+    void ReceiveData(string unitName, string value);  // 从CDB那里接收数据
+    bool isAllFree();
     void InsertOutput(vector<string>& table);
 };

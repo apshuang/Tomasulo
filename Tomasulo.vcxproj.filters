@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Tomasulo.cpp">
+    <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="LoadBuffer.cpp">
@@ -28,6 +28,15 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="ReorderBuffer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="CommonDataBus.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="InstructionDecoder.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Tomasulo.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -45,6 +54,15 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="ReservationStation.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CommonDataBus.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="InstructionDecoder.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Tomasulo.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

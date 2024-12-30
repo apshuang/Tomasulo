@@ -127,18 +127,24 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CommonDataBus.cpp" />
+    <ClCompile Include="InstructionDecoder.cpp" />
     <ClCompile Include="LoadBuffer.cpp" />
     <ClCompile Include="Registers.cpp" />
     <ClCompile Include="ReorderBuffer.cpp" />
     <ClCompile Include="ReservationStation.cpp" />
+    <ClCompile Include="main.cpp" />
     <ClCompile Include="Tomasulo.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BasicDefine.h" />
+    <ClInclude Include="CommonDataBus.h" />
+    <ClInclude Include="InstructionDecoder.h" />
     <ClInclude Include="LoadBuffer.h" />
     <ClInclude Include="Registers.h" />
     <ClInclude Include="ReorderBuffer.h" />
     <ClInclude Include="ReservationStation.h" />
+    <ClInclude Include="Tomasulo.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,21 +1,95 @@
-ï»¿#include "ReorderBuffer.h"
+#include "Tomasulo.h"
 
-int main() {
-    //è¿™é‡Œæ˜¯Visual Studioæ–‡ä»¶è¾“å…¥è¾“å‡ºå†™æ³•ï¼Œåœ¨å…¶ä»–IDEä¸Šå¯èƒ½éœ€è¦ä¿®æ”¹
-    FILE* stream;
-    freopen_s(&stream, "input2.txt", "r", stdin);
-    FILE* stream2;
-    freopen_s(&stream2, "output2.txt", "w", stdout);
 
-    TomasuloWithROB tomasulo;
-    int cycle = 0;
-    while(1){
-        cycle++;
-        int stop = tomasulo.Tick();
-        if (stop || cycle >= 1000)break;
-    }
-    tomasulo.OutputAll();
-    fclose(stdin);
-    fclose(stdout);
-    return 0;
+Tomasulo::Tomasulo() {
+	loadBuffer = new LoadBuffer();
+	storeBuffer = new StoreBuffer();
+	reservationStationADD = new ReservationStationADD();
+	reservationStationMULT = new ReservationStationMULT();
+	integerRegisters = new IntegerRegisters();
+	floatRegisters = new FloatRegisters();
+	instructionDecoder = new InstructionDecoder(integerRegisters, floatRegisters, loadBuffer, storeBuffer, reservationStationADD, reservationStationMULT);
+	commonDataBus = new CommonDataBus(integerRegisters, floatRegisters, loadBuffer, storeBuffer, reservationStationADD, reservationStationMULT);
+	outputTable.clear();
+	cycle = 0;
+}
+
+bool Tomasulo::CheckStop() {
+	if (!loadBuffer->isAllFree()) return false;
+	if (!storeBuffer->isAllFree())return false;
+	if (!reservationStationADD->isAllFree())return false;
+	if (!reservationStationMULT->isAllFree())return false;
+	if (!instructionDecoder->isAllFree()) return false;
+	return true;
+}
+
+
+bool Tomasulo::Tick() {
+	cycle++;
+	loadBuffer->Tick();
+	storeBuffer->Tick();
+	reservationStationADD->Tick();
+	reservationStationMULT->Tick();
+	instructionDecoder->Tick(cycle);  // ·ÅÔÚÒ»¸öÖÜÆÚµÄ×îºó²Å½øĞĞÕâ¸öÈ¡Ö¸/ÒëÂë£¬ÓÃÀ´Ä£ÄâÕâÒ»Õû¸öÖÜÆÚ¸Ã²¿¼ş¶¼ÔÚÈ¡Ö¸ºÍÒëÂë£¨¶ø²»ÊÇÒ»¿ªÍ·¾Íissue³öÈ¥ÁË£©
+	commonDataBus->Tick(cycle);  // ·ÅÔÚÒ»¸öÖÜÆÚµÄ×îºó£¬½ÓÊÕËùÓĞÊı¾İÖ®ºó£¬ÔÚÕâ¸öÖÜÆÚµÄ×îºó½«Æä×ª·¢³öÈ¥£¬ÕâÑù¾ÍÄÜÈÃ¸÷²¿¼şÔÚÏÂÒ»¸öÖÜÆÚ¿ªÊ¼¹¤×÷
+	GetOutput();
+	if (CheckStop())return true;
+	cout << string(80, '-') << "\n\n\n";
+	return false;
+}
+
+
+void Tomasulo::GetOutput() {
+	vector<string> table;
+	cout << "cycle" << cycle << ":\n";
+	loadBuffer->InsertOutput(table);
+	storeBuffer->InsertOutput(table);
+	reservationStationADD->InsertOutput(table);
+	reservationStationMULT->InsertOutput(table);
+	integerRegisters->InsertOutput(table);
+	floatRegisters->InsertOutput(table);
+	outputTable.push_back(table);
+	cout << "\n";
+}
+
+
+void Tomasulo::FoldingOutput() {
+	// Õâ¸ö·½·¨¿ÉÒÔÕÛµşÏàÍ¬ÄÚÈİµÄ¸÷ÖÜÆÚµÄ´òÓ¡£¬ ±ÈÈçcycle12-27µÄ´òÓ¡ÊÇÒ»ÑùµÄ£¬¾Í¿ÉÒÔÖ±½ÓÖ»´òÓ¡Ò»´Î£¨²¢ÓÃcycle12-27±íÊ¾£©
+	// µ«¸Ã·½·¨Ä¿Ç°ÔÚ±¾ÏîÄ¿ÖĞ²»ÉúĞ§£¬ÒòÎª±¾ÏîÄ¿»á´òÓ¡remainingTime£¬ËüÃ¿¸öÖÜÆÚ±ØÈ»ÊÇ²»Ò»ÑùµÄ
+
+	int sameStart = 0; //Èç¹ûÊÇÏàÍ¬µÄ£¬¾ÍÖÃÎª·Ç0
+	int allSize = outputTable.size();
+	for (int i = 0; i < allSize - 1; i++) {
+		int nowCheck = 1; //1´ú±íÊÇÏàÍ¬µÄ£¬Èç¹ûÓĞ²»Í¬µÄ»°ÔÙÖÃÎªÁã¼´¿É
+		for (int j = 0; j < outputTable[i].size(); j++) {
+			if (outputTable[i][j] != outputTable[i + 1][j]) {
+				nowCheck = 0;
+				break;
+			}
+		}
+		if (nowCheck == 1) {
+			//Èç¹ûÊÇÏàÍ¬µÄ£¬¾ÍÖÃÎªÆğÊ¼µÄcycle
+			if (sameStart == 0)sameStart = i + 1;
+		}
+		else {
+			cout << "cycle_";
+			if (sameStart) {
+				cout << sameStart << "-";
+			}
+			cout << i + 1 << ":" << endl;
+			for (int j = 0; j < outputTable[i].size(); j++) {
+				cout << outputTable[i][j] << endl;
+			}
+			cout << endl << endl;
+			sameStart = 0;
+		}
+	}
+	cout << "cycle_";
+	if (sameStart) {
+		cout << sameStart << "-";
+	}
+	cout << allSize << ":" << endl;
+	for (int j = 0; j < outputTable[allSize - 1].size(); j++) {
+		cout << outputTable[allSize - 1][j] << endl;
+	}
 }

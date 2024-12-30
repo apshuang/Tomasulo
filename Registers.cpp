@@ -4,8 +4,6 @@
 
 void RegisterLine::Reset() {
     busy = 0;
-	ROBPosition = -1;
-    value = 0;
     valueString = "";
 }
 
@@ -29,84 +27,112 @@ void RegisterLine::SetBusy(int busyValue) {
 	busy = busyValue;
 }
 
-string RegisterLine::OffsetToString(int offset) {
-	// 将数字形式的offset改成string形式的
-	// 因为该部分在实际应用中并不存在，所以我们不将它加到decoder中
-	offset *= 2;
-	string result = "";
-	if (offset == 0)return "0";
-	while (offset) {
-		result += (offset % 10) + '0';
-		offset /= 10;
-	}
-	reverse(result.begin(), result.end());
-	return result;
-}
-
-int RegisterLine::GetROBPosition() {
-	return ROBPosition;
-}
-
-void RegisterLine::SetROBPosition(int position) {
-	ROBPosition = position;
+void RegisterLine::ReceiveData(string unitName, string value) {
+	if (valueString == unitName) valueString = value;
 }
 
 
-Registers::Registers() {
+FloatRegisters::FloatRegisters() {
 	for (int i = 0; i < REGNUM; i++) {
-		registers[i] = RegisterLine();
+		registers[i] = new RegisterLine();
 		string initValue;
-		initValue = "Regs[F" + registers[i].OffsetToString(i) + "]";
-		registers[i].SetValue(initValue);
+		initValue = "Regs[F" + OffsetToString(i * 2) + "]";
+		registers[i]->SetValue(initValue);
 	}
 }
 
-void Registers::SetLineValue(string value, int reg) {
+void FloatRegisters::SetLineValue(string value, int reg) {
 	// 寄存器F0对应reg0，F2对应reg1，F4对应reg2……所以要转码
-	registers[reg / 2].SetValue(value);
+	registers[reg / 2]->SetValue(value);
 }
 
-int Registers::IsBusy(int reg) {
-	return registers[reg / 2].IsBusy();
+int FloatRegisters::IsBusy(int reg) {
+	return registers[reg / 2]->IsBusy();
 }
 
-string Registers::GetLineValue(int reg) {
-	return registers[reg / 2].GetValue();
+string FloatRegisters::GetLineValue(int reg) {
+	return registers[reg / 2]->GetValue();
 }
 
-void Registers::SetBusy(int busyValue, int reg) {
-	registers[reg / 2].SetBusy(busyValue);
+void FloatRegisters::SetBusy(int busyValue, int reg) {
+	registers[reg / 2]->SetBusy(busyValue);
 }
 
-int Registers::GetROBPosition(int reg) {
-	return registers[reg / 2].GetROBPosition();
-}
-
-void Registers::SetROBPosition(int position,int reg) {
-	registers[reg / 2].SetROBPosition(position);
-}
-
-void Registers::InsertOutput(vector<string>& table) {
-	string line1;
-	line1 += (string)"Reorder:";
+void FloatRegisters::ReceiveData(string unitName, string value) {
 	for (int i = 0; i < REGNUM; i++) {
-		line1 += 'F';
-		line1 += registers[i].OffsetToString(i);
-		line1 += (string)":";
-		if (registers[i].IsBusy())line1 += (char)(registers[i].GetROBPosition() + 1 + '0');
-		line1 += ';';
+		registers[i]->ReceiveData(unitName, value);
 	}
-	table.push_back(line1);
+}
 
-	string line2;
-	line2 += (string)"Busy:";
-	for (int i = 0; i < REGNUM; i++) {
-		line2 += 'F';
-		line2 += registers[i].OffsetToString(i);
-		line2 += (string)":";
-		if (registers[i].IsBusy())line2 += (string)"Yes";
-		else line2 += (string)"No";
-		line2 += ';';
+void FloatRegisters::InsertOutput(vector<string>& table) {
+	printHeader("Float Registers", 94);
+
+
+	std::cout << "|" << centerString("Register", 14) << "|";
+	std::cout << centerString("Busy", 6) << "|";
+	std::cout << centerString("Value", 70) << "|\n";
+	std::cout << std::string(94, '-') << "\n";  // 打印分隔线
+
+	// 打印每个寄存器的名字、值和 busy 状态
+	for (int i = 0; i < REGNUM; ++i) {
+		std::cout << "|" << centerString("R" + std::to_string(i * 2), 14) << "|";
+		std::cout << centerString(std::to_string(registers[i]->IsBusy()), 6) << "|";
+		std::cout << centerString(registers[i]->GetValue(), 70) << "|\n";
+
 	}
-	table.push_back(line2);
+	std::cout << std::string(94, '-') << "\n";  // 打印分隔线
+	cout << endl;
+}
+
+
+
+IntegerRegisters::IntegerRegisters() {
+	for (int i = 0; i < REGNUM; i++) {
+		registers[i] = new RegisterLine();
+		string initValue;
+		initValue = "Regs[x" + OffsetToString(i) + "]";
+		registers[i]->SetValue(initValue);
+	}
+}
+
+void IntegerRegisters::SetLineValue(string value, int reg) {
+	// 寄存器x0就对应reg0，x1就对应reg1，x2对应reg2，与浮点寄存器不一样
+	registers[reg]->SetValue(value);
+}
+
+int IntegerRegisters::IsBusy(int reg) {
+	return registers[reg]->IsBusy();
+}
+
+string IntegerRegisters::GetLineValue(int reg) {
+	return registers[reg]->GetValue();
+}
+
+void IntegerRegisters::SetBusy(int busyValue, int reg) {
+	registers[reg]->SetBusy(busyValue);
+}
+
+void IntegerRegisters::ReceiveData(string unitName, string value) {
+	for (int i = 0; i < REGNUM; i++) {
+		registers[i]->ReceiveData(unitName, value);
+	}
+}
+
+void IntegerRegisters::InsertOutput(vector<string>& table) {
+	printHeader("Integer Registers", 94);
+
+	std::cout << "|" << centerString("Register", 14) << "|";
+	std::cout << centerString("Busy", 6) << "|";
+	std::cout << centerString("Value", 70) << "|\n";
+	std::cout << std::string(94, '-') << "\n";  // 打印分隔线
+
+	// 打印每个寄存器的名字、值和 busy 状态
+	for (int i = 0; i < REGNUM; ++i) {
+		std::cout << "|" << centerString("x" + std::to_string(i), 14) << "|";
+		std::cout << centerString(std::to_string(registers[i]->IsBusy()), 6) << "|";
+		std::cout << centerString(registers[i]->GetValue(), 70) << "|\n";
+
+	}
+	std::cout << std::string(94, '-') << "\n";  // 打印分隔线
+	cout << endl;
 }
