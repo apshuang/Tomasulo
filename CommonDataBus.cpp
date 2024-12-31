@@ -29,6 +29,9 @@ void CommonDataBus::Tick(int cycle) {
 		while (unitName.substr(0, 5) == "Store") {
 			// Store指令完成之后并不需要将数据转发出去，所以也就不占据总线
 			// 这里仍然让它发到总线来是为了让InstructionDecoder统计各条指令的完成时间
+
+			instructionDecoder->ReceiveData(unitName, value, cycle);  // store指令也要发给ID部件，让其记录
+
 			if (functionUnit.empty()) return;
 			unitName = functionUnit.front();
 			functionUnit.pop();
@@ -42,6 +45,6 @@ void CommonDataBus::Tick(int cycle) {
 		storeBuffer->ReceiveData(unitName, value);
 		reservationAdd->ReceiveData(unitName, value);
 		reservationMult->ReceiveData(unitName, value);
-		instructionDecoder->ReceiveData(unitName, value);
+		instructionDecoder->ReceiveData(unitName, value, cycle);
 	}
 }

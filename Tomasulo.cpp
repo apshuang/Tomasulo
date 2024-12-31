@@ -93,3 +93,7 @@ void Tomasulo::FoldingOutput() {
 		cout << outputTable[allSize - 1][j] << endl;
 	}
 }
+
+void Tomasulo::OutputInstructionTime() {
+	instructionDecoder->OutputInstructionTime();
+}

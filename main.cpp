@@ -3,9 +3,9 @@
 int main() {
     //这里是Visual Studio文件输入输出写法，在其他IDE上可能需要修改
     FILE* stream;
-    freopen_s(&stream, "doubleIssue_withoutROB_input.txt", "r", stdin);
+    freopen_s(&stream, "singleIssue_withoutROB_input.txt", "r", stdin);
     FILE* stream2;
-    freopen_s(&stream2, "doubleIssue_withoutROB_output.txt", "w", stdout);
+    freopen_s(&stream2, "singleIssue_withoutROB_output.txt", "w", stdout);
 
     Tomasulo* tomasulo = new Tomasulo();
     int cycle = 0;
@@ -14,6 +14,7 @@ int main() {
         bool stop = tomasulo->Tick();
         if (stop || cycle >= 1000)break;
     }
+    tomasulo->OutputInstructionTime();
     //tomasulo->FoldingOutput();
     fclose(stdin);
     fclose(stdout);

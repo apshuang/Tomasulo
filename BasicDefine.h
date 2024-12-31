@@ -22,7 +22,7 @@ using namespace std;
 #define MULTCYCLE 6
 #define DIVCYCLE 12
 
-#define ISSUENUM 2
+#define ISSUENUM 1
 #define ADDERNUM 1  // 这个是functionUnit的数量
 #define MULTIPLIERNUM 1
 #define LOADUNITNUM 1  // 为了方便，我们假设load指令和store指令使用的内存单元各有1个
@@ -70,11 +70,16 @@ const unordered_map<string, string> OperatorSign = {
 };
 
 
-class Instruction {
-private:
-	int cycle;
-	int number;
+struct Instruction {
+	string inst;
+	int issueComplete;
+	int executeComplete;
 
+	Instruction(string ins, int issue, int exec) {
+		inst = ins;
+		issueComplete = issue;
+		executeComplete = exec;
+	}
 };
 
 

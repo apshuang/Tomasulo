@@ -25,4 +25,5 @@ public:
     bool Tick();
     void GetOutput();
     void FoldingOutput();
+    void OutputInstructionTime();
 };

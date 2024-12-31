@@ -94,7 +94,7 @@ void InstructionDecoder::SetRegisterValue(string registerName, string funcUnit) 
 bool InstructionDecoder::ParseLoadAndStore(string opcode, string operands, float cycle) {
 	string dest;
 	string destValue;
-
+	string originOperands = operands;
 	size_t commaPos = operands.find(",");
 	if (commaPos != std::string::npos) {
 		dest = operands.substr(0, commaPos);
@@ -116,16 +116,21 @@ bool InstructionDecoder::ParseLoadAndStore(string opcode, string operands, float
 		base = operands.substr(0, rightParenPos);
 		base = GetRegisterValue(base);
 	}
-
+	string unitName = "";
 	if (instructionModule[opcode] == LOAD) {
-		string unitName = loadBuffer->LoadIssue(base, offset, cycle);
+		unitName = loadBuffer->LoadIssue(base, offset, cycle);
 		if (unitName == "")return false;
 		SetRegisterValue(dest, unitName);  // 设置依赖
 	}
 	else {
-		string unitName = storeBuffer->StoreIssue(base, offset, dest, cycle);
+		unitName = storeBuffer->StoreIssue(base, offset, dest, cycle);
 		if (unitName == "")return false;
 	}
+
+	string originInst = opcode + " " + originOperands;
+	instMap[unitName] = instructionTime.size();
+	instructionTime.push_back({ originInst, (int)cycle, -1 });
+
 	return true;
 }
 
@@ -133,6 +138,7 @@ bool InstructionDecoder::ParseAddAndMult(string opcode, string operands, float c
 	string dest;
 
 	size_t commaPos = operands.find(",");
+	string originOperands = operands;
 	if (commaPos != std::string::npos) {
 		dest = operands.substr(0, commaPos);
 		operands = operands.substr(commaPos + 1);
@@ -147,22 +153,28 @@ bool InstructionDecoder::ParseAddAndMult(string opcode, string operands, float c
 		src2 = GetRegisterValue(src2);
 	}
 
+	string unitName = "";
 	if (instructionModule[opcode] == ADDER) {
-		string unitName = reservationAdd->AddIssue(opcode, src1, src2, cycle);
-		if (unitName == "")return false;
-		SetRegisterValue(dest, unitName);
+		unitName = reservationAdd->AddIssue(opcode, src1, src2, cycle);
 	}
 	else {
-		string unitName = reservationMult->MultIssue(opcode, src1, src2, cycle);
-		if (unitName == "")return false;
-		SetRegisterValue(dest, unitName);
+		unitName = reservationMult->MultIssue(opcode, src1, src2, cycle);
 	}
+
+	if (unitName == "")return false;
+	SetRegisterValue(dest, unitName);  // 设置寄存器依赖
+
+	string originInst = opcode + " " + originOperands;
+	instMap[unitName] = instructionTime.size();
+	instructionTime.push_back({ originInst, (int)cycle, -1 });
+
 	return true;
 }
 
-void InstructionDecoder::ParseBranch(string opcode, string operands) {
+void InstructionDecoder::ParseBranch(string opcode, string operands, float cycle) {
 	compareType = opcode;
 	size_t commaPos = operands.find(",");
+	string originOperands = operands;
 	if (commaPos != std::string::npos) {
 		compareLeft = operands.substr(0, commaPos);
 		compareLeft = GetRegisterValue(compareLeft);
@@ -175,6 +187,9 @@ void InstructionDecoder::ParseBranch(string opcode, string operands) {
 		compareRight = GetRegisterValue(compareRight);
 		branchLabel = operands.substr(commaPos + 1);
 	}
+
+	string originInst = opcode + " " + originOperands;
+	instructionTime.push_back({ originInst, (int)cycle, -1 });
 }
 
 int InstructionDecoder::isBranch() {
@@ -206,11 +221,21 @@ void InstructionDecoder::Tick(int cycle) {
 	其中括号内的label和comments都是可选项
 	而operands是因指令而异的，比如add指令是"dest,src1,src2"，而ld指令是"dest,offset(base)"，这个parse交给下游去进行
 	*/
-	if (branchLabel != "") {
-		// 说明当前已经卡在一条branch指令上了，需要等待判断结果出来之后，再发射后续的指令
-		return;
-	}
 	for (int i = 0; i < ISSUENUM; i++) {
+		if (branchLabel != "") {
+			int branchResult = isBranch();
+			if (branchResult == -1)return;  // 尚未准备好，阻塞
+			else if (branchResult == 0) {
+				instructionTime[instructionTime.size() - 1].executeComplete = cycle;
+				ResetBranch();
+				index++;
+			}
+			else if (branchResult == 1) {
+				instructionTime[instructionTime.size() - 1].executeComplete = cycle;
+				ResetBranch();
+				index = labelMap[branchLabel];
+			}
+		}
 		float exactCycle = cycle + (float)i / ISSUENUM;
 		if (index >= instructions.size()) return;  // 已读完所有指令
 		string inst = instructions[index];
@@ -259,17 +284,8 @@ void InstructionDecoder::Tick(int cycle) {
 			}
 			else if (instructionModule[opcode] == BRANCH) {
 				// BRANC的Hoperands的格式为"compareLeft,compareRight,label"
-				ParseBranch(opcode, operands);
-				int branchResult = isBranch();
-				if (branchResult == -1)return;  // 尚未准备好，阻塞
-				else if (branchResult == 0) {
-					ResetBranch();
-					index++;
-				}
-				else if (branchResult == 1) {
-					ResetBranch();
-					index = labelMap[branchLabel];
-				}
+				ParseBranch(opcode, operands, cycle);
+				
 			}
 		}
 		else {
@@ -283,21 +299,44 @@ bool InstructionDecoder::isAllFree() {
 	return index >= instructions.size();
 }
 
-void InstructionDecoder::ReceiveData(string unitName, string value) {
+void InstructionDecoder::ReceiveData(string unitName, string value, int cycle) {
+	if (instMap.count(unitName)) {
+		int idx = instMap[unitName];
+		instMap.erase(unitName);
+		instructionTime[idx].executeComplete = cycle;
+	}
+
 	if (branchLabel != "") {
 		// 必须当前是在阻塞状态的
 		if (compareLeft == unitName) compareLeft = value;
 		if (compareRight == unitName) compareRight = value;
 
-		int branchResult = isBranch();
-		if (branchResult == -1)return;  // 尚未准备好，阻塞
-		else if (branchResult == 0) {
-			ResetBranch();
-			index++;
-		}
-		else if (branchResult == 1) {
-			ResetBranch();
-			index = labelMap[branchLabel];
-		}
 	}
+}
+
+
+void InstructionDecoder::OutputInstructionTime() {
+	const int tableWidth = 70;
+	const int colWidth[] = { 20, 15, 15, 15 };
+	printHeader("Instruction Complete Time", tableWidth);
+
+	// 打印列标题
+	cout << "|"
+		<< centerString("Instruction", colWidth[0]) << "|"
+		<< centerString("Issue", colWidth[1]) << "|"
+		<< centerString("Execute", colWidth[2]) << "|"
+		<< centerString("WriteBack", colWidth[3]) << "|\n";
+	cout << string(tableWidth, '-') << "\n";
+
+	// 打印指令数据
+	for (const auto& instr : instructionTime) {
+		cout << "|"
+			<< centerString(instr.inst, colWidth[0]) << "|"
+			<< centerString(to_string(instr.issueComplete), colWidth[1]) << "|"
+			<< centerString(to_string(instr.executeComplete), colWidth[2]) << "|"
+			<< centerString(to_string(instr.executeComplete + 1), colWidth[3]) << "|\n";
+	}
+
+	// 打印表尾线
+	cout << string(tableWidth, '-') << "\n";
 }
