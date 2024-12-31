@@ -325,7 +325,7 @@ void StoreBuffer::ReceiveData(string unitName, string value) {
 void StoreBuffer::InsertOutput(vector<string>& table) {
 	printHeader("Store Buffers", 70);
 
-	std::cout << "|" << centerString("Line", 10)
+	std::cout << "|" << centerString("Line", 12)
 		<< "|" << centerString("Busy", 6)
 		<< "|" << centerString("Address", 36)
 		<< "|" << centerString("Remaining", 11) << "|\n";
@@ -333,7 +333,7 @@ void StoreBuffer::InsertOutput(vector<string>& table) {
 
 	// 打印每一行的内容
 	for (int i = 0; i < STORENUM; ++i) {
-		std::cout << "|" << centerString(storebuffers[i]->GetName(), 10)
+		std::cout << "|" << centerString(storebuffers[i]->GetName(), 12)
 			<< "|" << centerString(std::to_string(storebuffers[i]->IsBusy()), 6)
 			<< "|" << centerString(storebuffers[i]->GetAddress(), 36)
 			<< "|" << centerString(std::to_string(storebuffers[i]->GetRemainingTime()), 11) << "|\n";
