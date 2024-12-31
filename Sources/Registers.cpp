@@ -1,5 +1,5 @@
-#include "BasicDefine.h"
-#include "Registers.h"
+#include "../Headers/BasicDefine.h"
+#include "../Headers/Registers.h"
 
 
 void RegisterLine::Reset() {

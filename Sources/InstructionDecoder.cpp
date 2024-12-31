@@ -1,4 +1,4 @@
-#include "InstructionDecoder.h"
+#include "../Headers/InstructionDecoder.h"
 
 InstructionDecoder::InstructionDecoder(IntegerRegisters* intRegs, FloatRegisters* floatRegs, LoadBuffer* LDBuffer, StoreBuffer* SDBuffer, ReservationStationADD* RSAdd, ReservationStationMULT* RSMult) {
 	operandNum.clear();

@@ -22,7 +22,7 @@ using namespace std;
 #define MULTCYCLE 6
 #define DIVCYCLE 12
 
-#define ISSUENUM 1
+#define ISSUENUM 2
 #define ADDERNUM 1  // 这个是functionUnit的数量
 #define MULTIPLIERNUM 1
 #define LOADUNITNUM 1  // 为了方便，我们假设load指令和store指令使用的内存单元各有1个

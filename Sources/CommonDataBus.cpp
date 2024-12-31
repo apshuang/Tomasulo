@@ -1,7 +1,7 @@
-#include "CommonDataBus.h"
-#include "LoadBuffer.h"
-#include "ReservationStation.h"
-#include "InstructionDecoder.h"
+#include "../Headers/CommonDataBus.h"
+#include "../Headers/LoadBuffer.h"
+#include "../Headers/ReservationStation.h"
+#include "../Headers/InstructionDecoder.h"
 
 queue<string> CommonDataBus::functionUnit;
 queue<string> CommonDataBus::valueQueue;

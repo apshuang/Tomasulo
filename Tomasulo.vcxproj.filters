@@ -18,51 +18,45 @@
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="LoadBuffer.cpp">
+    <ClCompile Include="Sources\CommonDataBus.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="ReservationStation.cpp">
+    <ClCompile Include="Sources\InstructionDecoder.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Registers.cpp">
+    <ClCompile Include="Sources\LoadBuffer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="ReorderBuffer.cpp">
+    <ClCompile Include="Sources\Registers.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="CommonDataBus.cpp">
+    <ClCompile Include="Sources\ReservationStation.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="InstructionDecoder.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="Tomasulo.cpp">
+    <ClCompile Include="Sources\Tomasulo.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="LoadBuffer.h">
+    <ClInclude Include="Headers\BasicDefine.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="ReorderBuffer.h">
+    <ClInclude Include="Headers\CommonDataBus.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Registers.h">
+    <ClInclude Include="Headers\InstructionDecoder.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="BasicDefine.h">
+    <ClInclude Include="Headers\LoadBuffer.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="ReservationStation.h">
+    <ClInclude Include="Headers\Registers.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="CommonDataBus.h">
+    <ClInclude Include="Headers\ReservationStation.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="InstructionDecoder.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="Tomasulo.h">
+    <ClInclude Include="Headers\Tomasulo.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

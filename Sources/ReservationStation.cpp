@@ -1,5 +1,5 @@
-#include "ReservationStation.h"
-#include "CommonDataBus.h"
+#include "../Headers/ReservationStation.h"
+#include "../Headers/CommonDataBus.h"
 
 void ReservationStationLine::Reset() {
 	busy = 0;

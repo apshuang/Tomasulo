@@ -127,24 +127,22 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="CommonDataBus.cpp" />
-    <ClCompile Include="InstructionDecoder.cpp" />
-    <ClCompile Include="LoadBuffer.cpp" />
-    <ClCompile Include="Registers.cpp" />
-    <ClCompile Include="ReorderBuffer.cpp" />
-    <ClCompile Include="ReservationStation.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Tomasulo.cpp" />
+    <ClCompile Include="Sources\CommonDataBus.cpp" />
+    <ClCompile Include="Sources\InstructionDecoder.cpp" />
+    <ClCompile Include="Sources\LoadBuffer.cpp" />
+    <ClCompile Include="Sources\Registers.cpp" />
+    <ClCompile Include="Sources\ReservationStation.cpp" />
+    <ClCompile Include="Sources\Tomasulo.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BasicDefine.h" />
-    <ClInclude Include="CommonDataBus.h" />
-    <ClInclude Include="InstructionDecoder.h" />
-    <ClInclude Include="LoadBuffer.h" />
-    <ClInclude Include="Registers.h" />
-    <ClInclude Include="ReorderBuffer.h" />
-    <ClInclude Include="ReservationStation.h" />
-    <ClInclude Include="Tomasulo.h" />
+    <ClInclude Include="Headers\BasicDefine.h" />
+    <ClInclude Include="Headers\CommonDataBus.h" />
+    <ClInclude Include="Headers\InstructionDecoder.h" />
+    <ClInclude Include="Headers\LoadBuffer.h" />
+    <ClInclude Include="Headers\Registers.h" />
+    <ClInclude Include="Headers\ReservationStation.h" />
+    <ClInclude Include="Headers\Tomasulo.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

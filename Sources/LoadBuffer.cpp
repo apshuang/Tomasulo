@@ -1,6 +1,6 @@
-#include "BasicDefine.h"
-#include "LoadBuffer.h"
-#include "CommonDataBus.h"
+#include "../Headers/BasicDefine.h"
+#include "../Headers/LoadBuffer.h"
+#include "../Headers/CommonDataBus.h"
 
 void LoadBufferLine::Reset() {
 	busy = 0;
